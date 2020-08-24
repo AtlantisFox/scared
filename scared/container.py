@@ -36,10 +36,11 @@ class Container:
 
     @property
     def trace_size(self):
-        """Effective trace size that will be analysed for this container instance."""
+        """Effective trace size after all preprocessed applied."""
         if self._trace_size is None:
             try:
-                self._trace_size = len(self._ths[0].samples[self.frame])
+                wrapper = _TracesBatchWrapper(self._ths[0:1], self.frame, self.preprocesses)
+                self._trace_size = len(wrapper.samples[0])
             except TypeError:
                 self._trace_size = 1
         return self._trace_size
@@ -68,9 +69,14 @@ class Container:
             (50001, 250),
             (100001, 100)
         ]
+        try:
+            input_size = len(self._ths[0].samples[self.frame])
+        except AttributeError:
+            input_size = 0
+        max_size = max(trace_size, input_size)
         for i in range(len(ref_sizes)):
             try:
-                if trace_size >= ref_sizes[i][0] and trace_size < ref_sizes[i + 1][0]:
+                if max_size >= ref_sizes[i][0] and max_size < ref_sizes[i + 1][0]:
                     return ref_sizes[i][1]
             except IndexError:
                 return ref_sizes[-1][1]
@@ -94,7 +100,7 @@ class Container:
         """
         if batch_size and batch_size < 0:
             raise ValueError(f'batch_size must be a positive integer, not {batch_size}.')
-        batch_size = batch_size if batch_size else self._compute_batch_size(self.trace_size)
+        batch_size = batch_size if batch_size else self.batch_size
         return _TracesBatchIterable(
             ths=self._ths,
             batch_size=batch_size,

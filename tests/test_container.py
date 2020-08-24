@@ -35,6 +35,14 @@ def ths():
     return scared.traces.formats.read_ths_from_ram(samples=samples, plaintext=plaintext)
 
 
+@pytest.fixture
+def moderate_ths():
+    shape = (2000, 10000)
+    samples = np.random.randint(0, 255, shape, dtype='uint8')
+    plaintext = np.random.randint(0, 255, (shape[0], 16), dtype='uint8')
+    return scared.traces.formats.read_ths_from_ram(samples=samples, plaintext=plaintext)
+
+
 def test_container_raises_exception_if_ths_is_not_trace_header_set_compatible():
     with pytest.raises(TypeError):
         scared.Container(ths='foo')
@@ -82,6 +90,30 @@ def test_container_batches_raises_exception_if_batch_size_is_incorrect(ths):
         container.batches(batch_size='foo')
     with pytest.raises(ValueError):
         container.batches(batch_size=-12)
+
+
+def test_container_batch_size_with_frame(moderate_ths):
+    container = scared.Container(moderate_ths, frame=range(10))
+    assert container.trace_size == 10
+    assert container.batch_size == 25000
+
+
+def test_container_batch_size_with_preprocess(moderate_ths):
+    @scared.preprocess
+    def prep_reducing_size(traces):
+        return traces[:, :10]
+
+    container = scared.Container(moderate_ths, preprocesses=[prep_reducing_size])
+    assert container.trace_size == 10
+    assert container.batch_size == 2500
+
+    @scared.preprocess
+    def prep_expanding_size(traces):
+        return np.tile(traces, (20,))
+
+    container = scared.Container(moderate_ths, preprocesses=[prep_expanding_size])
+    assert container.trace_size == 20 * len(moderate_ths.samples[0])
+    assert container.batch_size == 100
 
 
 def test_container_raises_exception_if_frame_param_has_improper_type(ths):
@@ -147,6 +179,22 @@ def test_container_with_frame(ths):
     b = c.batches(batch_size=10)[0]
     assert np.array_equal(b.samples, ths.samples[:10, :20])
     assert isinstance(str(c), str)
+
+
+def test_container_with_frame_compute_batch_size(ths):
+    c = scared.Container(ths, frame=slice(None, 20))
+    s = c._compute_batch_size(trace_size=len(ths.samples[0, :20]))
+    assert isinstance(s, int)
+    b = c.batches(batch_size=s)[0]
+    assert np.array_equal(b.samples, ths.samples[:s, :20])
+
+
+def test_container_compute_batch_size_static_call(ths):
+    s = scared.Container._compute_batch_size({}, trace_size=len(ths.samples[0, :20]))
+    assert isinstance(s, int)
+    c = scared.Container(ths, frame=slice(None, 20))
+    b = c.batches(batch_size=s)[0]
+    assert np.array_equal(b.samples, ths.samples[:s, :20])
 
 
 def test_container_with_multiple_preprocess_and_frame(ths):
@@ -217,3 +265,20 @@ def test_performance_container_str():
         times.append(toc - tic)
 
     assert max(times) / min(times) < 10, 'str representation of container takes too much time'
+
+
+def test_performance_container_batch_size(moderate_ths):
+    shapes = [(100_000, 10_000), (10_000, 10_000), (1_000, 10_000)]
+    times = []
+    for shape in shapes:
+        samples = np.empty(shape, dtype='uint8')
+        plaintext = np.empty((shape[0], 16), dtype='uint8')
+        ths = scared.traces.formats.read_ths_from_ram(samples=samples, plaintext=plaintext)
+        c = scared.Container(ths)
+
+        tic = time.time()
+        c.batch_size
+        toc = time.time()
+        times.append(toc - tic)
+
+    assert max(times) / min(times) < 5, 'batch_size computation takes too much time'

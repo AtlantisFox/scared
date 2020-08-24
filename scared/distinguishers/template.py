@@ -17,7 +17,7 @@ class _TemplateBuildDistinguisherMixin(partitioned._PartitionnedDistinguisherBas
 
     def _accumulate(self, traces, data, bool_mask):
         logger.debug('Accumulate build distinguisher')
-        self._counters = _np.sum(bool_mask, axis=0)
+        self._counters += _np.sum(bool_mask, axis=0)
         self._exi += _np.dot(bool_mask.T, traces)
         for i, p in enumerate(self.partitions):
             tmp = traces[bool_mask[:, i]]
@@ -52,7 +52,7 @@ class _BaseTemplateAttackDistinguisherMixin(base.DistinguisherMixin, partitioned
 
     def _initialize(self, traces, data):
         if not self.is_build:
-            raise base.DistinguisherError(f'Template must be build before you can run it on a matching container.')
+            raise base.DistinguisherError('Template must be build before you can run it on a matching container.')
         if traces.shape[1] != self.pooled_covariance.shape[1]:
             raise base.DistinguisherError(
                 f'Trace size for matching {traces.shape[1]} is different than trace size used for building {self.pooled_covariance.shape[1]}.'

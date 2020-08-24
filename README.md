@@ -9,19 +9,62 @@ scared is a side-channel analysis framework.
 
 ## Getting started
 
-### Prerequisites
+### Requirements
 
-You will need **Python 3.6+** to use and install scared. You can use pip (or any pip based tool like pipenv) or conda to install it.
+Scared need python **3.6**, **3.7** or **3.8**.
 
-### Installation
+You can install `scared`, depending on your setup:
 
-To install scared, you can use pip (or pipenv, or any other pip based-tool) or conda:
+- from source
+- with `pip`
+- with `conda`
+
+>At time of writing, we highly recommend to install `scared` with `conda` if you want to use it with **python 3.8**
+
+#### Install with `conda`
+
+Conda builds are available for `linux-x64` and `osx-64` platforms.
+If your system isn't yet supported, [build contributions are welcome!](./CONTRIBUTING.md#building-for-conda)).
+
+You just have to run:
 
 ```bash
-$ pip install scared
-# or with Conda
-$ conda install -c eshard scared
+conda install -c eshard scared
 ```
+
+#### Install with `pip`
+
+Binary builds are available from Pypi for most Linux platforms and OS X. If your environment has a binary build available, just run:
+
+```bash
+pip install scared
+```
+
+If no wheel is available for your setup, you'll also need:
+
+- setuptools **0.40 or greater** (just run `pip install -U pip setuptools`)
+- a C compiler to compile C extension
+- for **Python 3.8** only, a `llvmlite` working installation (see [install from source documentation](https://llvmlite.readthedocs.io/en/latest/admin-guide/install.html#building-manually))
+
+and then run `pip install scared`.
+
+#### Install from source
+
+To install from source, you will need:
+
+- setuptools **0.40 or greater** (just run `pip install -U pip setuptools`)
+- a C compiler to compile C extension
+- for **Python 3.8** only, a `llvmlite` working installation (see [install from source documentation](https://llvmlite.readthedocs.io/en/latest/admin-guide/install.html#building-manually), or install it with `conda`)
+
+You need to run:
+
+```bash
+pip install .
+```
+
+from the source folder.
+
+If you are planning to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md) to install the library in development mode and run the test suite.
 
 ### Make a first cool thing
 
@@ -76,3 +119,18 @@ If you wish to use this library in a commercial or industrial context, eshard pr
 ## Authors
 
 See [AUTHORS](AUTHORS.md) for the list of contributors to the project.
+
+## Binary builds available
+
+Binary builds (wheels on pypi and conda builds) are available for the following platforms and Python version.
+
+Platforms:
+
+- Linux x86 64
+- Macosx x86 64
+
+Python version:
+
+- 3.6
+- 3.7
+- 3.8 from `conda`, or buy building from sources.
